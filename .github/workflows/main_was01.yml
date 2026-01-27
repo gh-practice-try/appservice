@@ -20,3 +20,21 @@ jobs:
         run: |
           docker build -t testconregyhg.azurecr.io/chicken:${{ github.sha }} .
           docker push testconregyhg.azurecr.io/chicken:${{ github.sha }}
+
+      - name: Checkout manifest repo
+        run: |
+          git clone https://x-access-token:${{ secrets.MANIFEST_REPO_TOKEN }}@github.com/gh-practice-try/CD-repo.git
+
+      - name: Update image tag in deployment.yaml
+        run: |
+          cd CD-repo/k8s
+          sed -i "s|image: .*|image: testconregyhg.azurecr.io/chicken:${{ github.sha }}|" deployment.yaml
+
+      - name: Commit and push manifest repo
+        run: |
+          cd CD-repo
+          git config user.name "ci-bot"
+          git config user.email "ci@github"
+          git add .
+          git commit -m "Update image to ${{ github.sha }}"
+          git push
